@@ -1,12 +1,11 @@
 /**
- * @(#)ThriftServerRunnable.java, Jul 31, 2017.
+ * @(#)ThriftServer.java, Aug 17, 2017.
  * <p>
  * Copyright 2017 fenbi.com. All rights reserved.
  * FENBI.COM PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
-package com.coder4.sbmvt.thrift.server.configuration;
+package com.coder4.sbmvt.thrift.server;
 
-import com.netflix.discovery.EurekaClient;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocolFactory;
@@ -17,12 +16,6 @@ import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TNonblockingServerTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.transport.TTransportFactory;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -32,10 +25,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author coder4
  */
-@Configuration
-@ConditionalOnBean(value = TProcessor.class, name = "thriftProcessor")
-@EnableEurekaClient()
-public class ThriftServerConfiguration implements InitializingBean, DisposableBean, Runnable {
+public class ThriftServerRunnable implements Runnable {
 
     private static final int THRIFT_PORT = 3000;
 
@@ -63,11 +53,13 @@ public class ThriftServerConfiguration implements InitializingBean, DisposableBe
 
     protected Thread thread;
 
-    @Autowired
     private TProcessor processor;
 
-    @Autowired
-    private EurekaClient eurekaClient;
+    private boolean isDestroy = false;
+
+    public ThriftServerRunnable(TProcessor processor) {
+        this.processor = processor;
+    }
 
     public TServer build() throws TTransportException {
         TNonblockingServerSocket.NonblockingAbstractServerSocketArgs socketArgs =
@@ -97,8 +89,6 @@ public class ThriftServerConfiguration implements InitializingBean, DisposableBe
         return new TThreadedSelectorServer(args);
     }
 
-    private boolean isDestroy = false;
-
     @Override
     public void run() {
         try {
@@ -110,19 +100,9 @@ public class ThriftServerConfiguration implements InitializingBean, DisposableBe
         }
     }
 
-    @Override
-    public void destroy() throws Exception {
-        // Unregister from eureka server & Sleep for 6 seconds
-        eurekaClient.shutdown();
-        Thread.sleep(TimeUnit.SECONDS.toMillis(6));
-
+    public void stop() throws Exception {
         threadPool.shutdown();
         server.stop();
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        thread = new Thread(this);
-        thread.start();
-    }
 }

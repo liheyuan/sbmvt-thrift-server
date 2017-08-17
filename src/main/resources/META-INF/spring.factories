@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.coder4.sbmvt.thrift.server.configuration.ThriftServerConfiguration
