@@ -8,7 +8,7 @@ targetCompatibility = 1.8
 
 // Use as maven groupId/artifactId/version
 group = 'com.coder4.sbmvt'
-project.archivesBaseName = 'sbmvt-thrift-server'
+project.archivesBaseName = 'thrift-server'
 project.version = '0.0.5'
 
 // source & javadoc pom
@@ -21,13 +21,38 @@ artifacts {
 }
 
 repositories {
-    maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+    maven {
+        credentials {
+            username "$mavenUser"
+            password "$mavenPass"
+        }
+        url 'http://maven.coder4.com/nexus/content/groups/public'
+    }
 }
+
+// maven deploy config start
+configurations {
+    deployerJars
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        configuration = configurations.deployerJars
+        repository(url: "http://maven.coder4.com/nexus/content/repositories/releases/") {
+            authentication(userName: "$mavenUser", password: "$mavenPass")
+        }
+        snapshotRepository(url: "http://maven.coder4.com/nexus/content/repositories/snapshots/") {
+            authentication(userName: "$mavenUser", password: "$mavenPass")
+        }
+    }
+}
+
+// maven deploy config end
 
 dependencies {
     compile 'org.springframework.cloud:spring-cloud-starter-eureka:1.3.1.RELEASE'
     compileOnly 'org.apache.thrift:libthrift:0.9.3'
 
-    testCompileOnly 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
 }
 
